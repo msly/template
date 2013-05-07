@@ -61,6 +61,18 @@ void OnPaint(HDC hdc)
     Gdiplus::Bitmap bitmap(L"c:\\code.jpg");
     graphics.DrawImage(&bitmap, 10, 10);
 
+    //ColorMatrix clrMatrix = {
+    //    0.3f,  0.3f,  0.3f,  0.0f, 0.0f,
+    //    0.59f, 0.59f, 0.59f, 0.0f, 0.0f,
+    //    0.11f, 0.11f, 0.11f, 0.0f, 0.0f,
+    //    0.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+    //    0.0f,  0.0f,  0.0f,  0.0f, 1.0f
+    //};
+    //ImageAttributes ImgAttr;
+    //ImgAttr.SetColorMatrix(&clrMatrix);
+    //graphics.DrawImage(&bitmap, GpRect(10 + bitmap.GetWidth() + 2, 10, bitmap.GetWidth(), bitmap.GetHeight()), 
+    //    0, 0, bitmap.GetWidth(), bitmap.GetHeight(), UnitPixel, &ImgAttr);
+
     // 灰度化 二值化
     BitmapData bitmapData;
     Gdiplus::Rect r(0, 0, bitmap.GetWidth(), bitmap.GetHeight());
