@@ -1,0 +1,151 @@
+#include <windows.h>
+#include <gdiplus.h>
+using namespace Gdiplus;
+#pragma comment(lib, "Gdiplus.lib")
+
+typedef union
+{
+    ARGB Color;
+    struct 
+    {
+        BYTE Blue;
+        BYTE Green;
+        BYTE Red;
+        BYTE Alpha;
+    };
+}ARGBQuad, *PARGBQuad;
+
+// 图像数据灰度化
+void Gray(BitmapData *data)
+{
+    PARGBQuad p = (PARGBQuad)data->Scan0;
+    int offset = data->Stride - data->Width * sizeof(ARGBQuad);
+
+    for (UINT y=0; y<data->Height; ++y, p += offset)
+    {
+        for (UINT x=0; x<data->Width; ++x,++p)
+        {
+            p->Blue = p->Green = p->Red = (p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8;
+        }
+    }
+}
+
+void Gray2Value(BitmapData *data, BYTE threshold)
+{
+    PARGBQuad p = (PARGBQuad)data->Scan0;
+    int offset = data->Stride - data->Width * sizeof(ARGBQuad);
+
+    for (UINT y=0; y<data->Height; ++y, p += offset)
+    {
+        for (UINT x=0; x<data->Width; ++x,++p)
+        {
+            if ( ((p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8) < threshold )
+                p->Color &= 0xff000000;
+            else
+                p->Color |= 0x00ffffff;
+        }
+    }
+}
+
+void OnPaint(HDC hdc)
+{
+    Graphics graphics(hdc);
+    //Pen pen(Gdiplus::Color(255, 0, 0, 255),2);
+    //graphics.DrawLine(&pen, 0, 0, 200, 100);
+    //FontFamily  fontFamily(L"FixSong");
+    //Font        font(&fontFamily, 14, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+    //PointF      pointF(0.0f, 0.0f);
+    //SolidBrush  brush(Color(255,0,0,255));
+    //graphics.DrawString(L"Hello World", -1, &font, pointF, &brush);
+
+    Gdiplus::Bitmap bitmap(L"c:\\code.jpg");
+    graphics.DrawImage(&bitmap, 10, 10);
+
+    // 灰度化 二值化
+    BitmapData bitmapData;
+    Gdiplus::Rect r(0, 0, bitmap.GetWidth(), bitmap.GetHeight());
+    bitmap.LockBits(&r, ImageLockModeRead | ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+    Gray(&bitmapData);
+    bitmap.UnlockBits(&bitmapData);
+
+    graphics.DrawImage(&bitmap,10 + bitmapData.Width + 2, 10);
+
+    bitmap.LockBits(&r, ImageLockModeRead | ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+    Gray2Value(&bitmapData, 128);
+    bitmap.UnlockBits(&bitmapData);
+
+    graphics.DrawImage(&bitmap,10 + 2 * bitmapData.Width + 2 + 2, 10);
+}
+
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, INT iCmdShow)
+{
+    MSG         msg;
+    HWND        hWnd;
+    WNDCLASS    wndClass;
+
+    wndClass.style          = CS_HREDRAW | CS_VREDRAW;
+    wndClass.lpfnWndProc    = WndProc;
+    wndClass.cbClsExtra     = 0;
+    wndClass.cbWndExtra     = 0;
+    wndClass.hInstance      = hInstance;
+    wndClass.hIcon          = LoadIcon(NULL, IDI_APPLICATION);
+    wndClass.hCursor        = LoadCursor(NULL, IDC_ARROW);
+    wndClass.hbrBackground  = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    wndClass.lpszMenuName   = NULL;
+    wndClass.lpszClassName  = TEXT("GDITest");
+    
+    RegisterClass(&wndClass);
+
+    hWnd = CreateWindow(
+                TEXT("GDITest"),
+                TEXT("GDITest"),
+                WS_OVERLAPPEDWINDOW,
+                CW_USEDEFAULT,
+                CW_USEDEFAULT,
+                400,
+                static_cast<int>(400*0.618),
+                NULL,
+                NULL,
+                hInstance,
+                NULL);
+
+    // Initialize GDI+
+    GdiplusStartupInput gdiplusStartupInput;
+    ULONG_PTR gdiplustoken;
+    GdiplusStartup(&gdiplustoken, &gdiplusStartupInput, NULL);
+
+    ShowWindow(hWnd, iCmdShow);
+    UpdateWindow(hWnd);
+
+    while (GetMessage(&msg, NULL, 0, 0))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    GdiplusShutdown(gdiplustoken);
+    return msg.wParam;
+} // WinMain
+
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    HDC         hdc;
+    PAINTSTRUCT ps;
+
+    switch (message)
+    {
+    case WM_PAINT:
+        hdc = BeginPaint(hWnd, &ps);
+        OnPaint(hdc);
+        EndPaint(hWnd, &ps);
+        return 0;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    default:
+        return DefWindowProc(hWnd, message, wParam, lParam);
+    }
+} // WndProc
