@@ -20,3 +20,6 @@ http://www.cnblogs.com/ziyunfei/archive/2012/10/05/2710349.html
 
 GDI+ 在Delphi程序的应用：ColorMatrix与图像灰度化
 http://club.topsage.com/thread-2263381-1-1.html
+
+OPenCV 验证码识别技术
+http://blog.csdn.net/anders0821/article/details/4147230
