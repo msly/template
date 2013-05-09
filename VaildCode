@@ -2,170 +2,189 @@
 #include "WinApplication.h"
 #include <cassert>
 #include <vector>
+#include <string>
+#include <ctime>
+#include <sstream>
+
+
+#pragma comment(lib, "urlmon.lib")
 
 using namespace std;
 
 typedef union
 {
     ARGB Color;
-    struct 
-    {
-        BYTE Blue;
-        BYTE Green;
-        BYTE Red;
-        BYTE Alpha;
-    };
+	struct 
+	{
+		BYTE Blue;
+		BYTE Green;
+		BYTE Red;
+		BYTE Alpha;
+	};
 }ARGBQuad, *PARGBQuad;
 
 // 图像数据灰度化 二值化
 void GrayAnd2Value(BitmapData *data, BYTE threshold)
 {
-    PARGBQuad p = (PARGBQuad)data->Scan0;
-    int offset = data->Stride - data->Width * sizeof(ARGBQuad);
+	PARGBQuad p = (PARGBQuad)data->Scan0;
+	int offset = data->Stride - data->Width * sizeof(ARGBQuad);
 
-    for (UINT y=0; y<data->Height; ++y, p += offset)
-    {
-        for (UINT x=0; x<data->Width; ++x,++p)
-        {
-            if ( ((p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8) < threshold )
-                p->Color &= 0xff000000;
-            else
-                p->Color |= 0x00ffffff;
-        }
-    }
+	for (UINT y=0; y<data->Height; ++y, p += offset)
+	{
+		for (UINT x=0; x<data->Width; ++x,++p)
+		{
+			if ( ((p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8) < threshold )
+				p->Color &= 0xff000000;
+			else
+				p->Color |= 0x00ffffff;
+		}
+	}
 }
 
 void ShowImage(HDC hdc)
 {
-    Graphics graphics(hdc);
-    Gdiplus::Bitmap bitmap(L"c:\\code.jpg");
-    graphics.DrawImage(&bitmap, 10, 10);
+	Graphics graphics(hdc);
+	Gdiplus::Bitmap bitmap(L"c:\\code.jpg");
+	graphics.DrawImage(&bitmap, 10, 10);
 
-    ColorMatrix clrMatrix = {
-        0.3f,  0.3f,  0.3f,  0.0f, 0.0f,
-        0.59f, 0.59f, 0.59f, 0.0f, 0.0f,
-        0.11f, 0.11f, 0.11f, 0.0f, 0.0f,
-        0.0f,  0.0f,  0.0f,  1.0f, 0.0f,
-        0.0f,  0.0f,  0.0f,  0.0f, 1.0f
-    };
-    ImageAttributes ImgAttr;
-    ImgAttr.SetColorMatrix(&clrMatrix);
-    ImgAttr.SetThreshold(0.5);
-    Graphics *g = Graphics::FromImage(&bitmap);
-    g->DrawImage(&bitmap, GpRect(0, 0, bitmap.GetWidth(), bitmap.GetHeight()), 
-        0, 0, bitmap.GetWidth(), bitmap.GetHeight(), UnitPixel, &ImgAttr);
-    graphics.DrawImage(&bitmap, 10 + bitmap.GetWidth() + 2, 10);
+	ColorMatrix clrMatrix = {
+		0.3f,  0.3f,  0.3f,  0.0f, 0.0f,
+		0.59f, 0.59f, 0.59f, 0.0f, 0.0f,
+		0.11f, 0.11f, 0.11f, 0.0f, 0.0f,
+		0.0f,  0.0f,  0.0f,  1.0f, 0.0f,
+		0.0f,  0.0f,  0.0f,  0.0f, 1.0f
+	};
+	ImageAttributes ImgAttr;
+	ImgAttr.SetColorMatrix(&clrMatrix);
+	ImgAttr.SetThreshold(0.5);
+	Graphics *g = Graphics::FromImage(&bitmap);
+	g->DrawImage(&bitmap, GpRect(0, 0, bitmap.GetWidth(), bitmap.GetHeight()), 
+		0, 0, bitmap.GetWidth(), bitmap.GetHeight(), UnitPixel, &ImgAttr);
+	graphics.DrawImage(&bitmap, 10 + bitmap.GetWidth() + 2, 10);
 }
 
 void OnPaint(HDC hdc)
 {
-    Graphics graphics(hdc);
-    //Gdiplus::Bitmap bitmap(L"C:\\code.jpg");
-    Gdiplus::Bitmap bitmap(L"C:\\validCode.jpg");
-    //Gdiplus::Bitmap bitmap(L".\\passCodeAction.jpg");
-    graphics.DrawImage(&bitmap, 10, 10);
+	Graphics graphics(hdc);
+	//Gdiplus::Bitmap bitmap(L"C:\\code.jpg");
+	//Gdiplus::Bitmap bitmap(L"C:\\validCode.jpg");
+	Gdiplus::Bitmap bitmap(L".\\code.jpg");
+	graphics.DrawImage(&bitmap, 10, 10);
 
-    // 灰度化 二值化
-    BitmapData bitmapData;
-    Gdiplus::Rect r(0, 0, bitmap.GetWidth(), bitmap.GetHeight());
-    bitmap.LockBits(&r, ImageLockModeRead | ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
-    PARGBQuad p = (PARGBQuad)bitmapData.Scan0;
-    int offset = bitmapData.Stride - bitmapData.Width * sizeof(ARGBQuad);
-    assert(offset == 0);
-    int *zft = new int[bitmap.GetWidth()]();
-    for (UINT y=0; y<bitmapData.Height; ++y, p += offset)
-    {
-        for (UINT x=0; x<bitmapData.Width; ++x,++p)
-        {
-            if ( ((p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8) < 128 )
-            {
-                p->Color &= 0xff000000;
-                ++zft[x];
-            }
-            else
-            {
-                p->Color |= 0x00ffffff;
-            }
-        }
-    }
-    bitmap.UnlockBits(&bitmapData);
+	// 灰度化 二值化
+	BitmapData bitmapData;
+	Gdiplus::Rect r(0, 0, bitmap.GetWidth(), bitmap.GetHeight());
+	bitmap.LockBits(&r, ImageLockModeRead | ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData);
+	PARGBQuad p = (PARGBQuad)bitmapData.Scan0;
+	int offset = bitmapData.Stride - bitmapData.Width * sizeof(ARGBQuad);
+	assert(offset == 0);
+	int *zft = new int[bitmap.GetWidth()]();
+	for (UINT y=0; y<bitmapData.Height; ++y, p += offset)
+	{
+		for (UINT x=0; x<bitmapData.Width; ++x,++p)
+		{
+			if ( ((p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8) < 128 )
+			{
+				p->Color &= 0xff000000;
+				++zft[x];
+			}
+			else
+			{
+				p->Color |= 0x00ffffff;
+			}
+		}
+	}
+	bitmap.UnlockBits(&bitmapData);
 
-    // 输出直方图
-    Pen pen(Color(255, 0, 0, 255));
-    for (int i=0; i<bitmap.GetWidth(); ++i)
-    {
-        graphics.DrawLine(&pen, 10+i, 10 + 2*bitmap.GetHeight(), 10+i, 10 + 2*bitmap.GetHeight() - zft[i]);
-    }
-    
+	// 输出直方图
+	Pen pen(Color(255, 0, 0, 255));
+	for (int i=0; i<bitmap.GetWidth(); ++i)
+	{
+		graphics.DrawLine(&pen, 10+i, 10 + 2*bitmap.GetHeight(), 10+i, 10 + 2*bitmap.GetHeight() - zft[i]);
+	}
 
-    // 分割字符   
-    bool bPair = false;
-    vector<int> vecSpilt;
-    for (int y=0; y<bitmap.GetHeight(); ++y)
-    {
-        vecSpilt.clear();
-        bPair = false;
-        for (int x=0; x<bitmap.GetWidth(); ++x)
-        {
-            if (!bPair && zft[x] > y)
-            {
-                vecSpilt.push_back(x);
-                bPair = true;
-            }
-            else if (bPair && zft[x] <= y)
-            {
-                if (x - vecSpilt.back() < 3)
-                    break;
-                vecSpilt.push_back(x);
-                bPair = false;
-            }
-            else if (bPair && x==bitmap.GetWidth()-1 && zft[x] > y)
-            {
-                vecSpilt.push_back(x);
-            }
-        }
-        if (vecSpilt.size() == 8)
-        {
-            for (int i=0; i<vecSpilt.size(); i+=2)
-            {
-                graphics.DrawImage(&bitmap, GpRect(10 + vecSpilt[i], 10 + 2 * bitmap.GetHeight() + 4,  vecSpilt[i+1] - vecSpilt[i], bitmap.GetHeight()),
-                                            vecSpilt[i], 0, vecSpilt[i+1] - vecSpilt[i], bitmap.GetHeight(), UnitPixel);
-                graphics.DrawLine(&pen, 10 + vecSpilt[i], 10 + 2 * bitmap.GetHeight() + 4,  10 + vecSpilt[i], 10 + 3 * bitmap.GetHeight() + 4);
-                graphics.DrawLine(&pen, 10 + vecSpilt[i+1], 10 + 2 * bitmap.GetHeight() + 4,  10 + vecSpilt[i+1], 10 + 3 * bitmap.GetHeight() + 4);
-            }
-            
-            break;
-        }
-    }
-    
-    graphics.DrawImage(&bitmap,10 + bitmapData.Width + 2, 10);
 
-    delete []zft;
+	// 分割字符   
+	bool bPair = false;
+	vector<int> vecSpilt;
+	for (int y=0; y<bitmap.GetHeight(); ++y)
+	{
+		vecSpilt.clear();
+		bPair = false;
+		for (int x=0; x<bitmap.GetWidth(); ++x)
+		{
+			if (!bPair && zft[x] > y)
+			{
+				vecSpilt.push_back(x);
+				bPair = true;
+			}
+			else if (bPair && zft[x] <= y)
+			{
+				if (x - vecSpilt.back() < 3)
+					break;
+				vecSpilt.push_back(x);
+				bPair = false;
+			}
+			else if (bPair && x==bitmap.GetWidth()-1 && zft[x] > y)
+			{
+				vecSpilt.push_back(x);
+			}
+		}
+		if (vecSpilt.size() == 8)
+		{
+			for (int i=0; i<vecSpilt.size(); i+=2)
+			{
+				graphics.DrawImage(&bitmap, GpRect(10 + vecSpilt[i], 10 + 2 * bitmap.GetHeight() + 4,  vecSpilt[i+1] - vecSpilt[i], bitmap.GetHeight()),
+					vecSpilt[i], 0, vecSpilt[i+1] - vecSpilt[i], bitmap.GetHeight(), UnitPixel);
+				graphics.DrawLine(&pen, 10 + vecSpilt[i], 10 + 2 * bitmap.GetHeight() + 4,  10 + vecSpilt[i], 10 + 3 * bitmap.GetHeight() + 4);
+				graphics.DrawLine(&pen, 10 + vecSpilt[i+1], 10 + 2 * bitmap.GetHeight() + 4,  10 + vecSpilt[i+1], 10 + 3 * bitmap.GetHeight() + 4);
+			}
+
+			break;
+		}
+	}
+
+	graphics.DrawImage(&bitmap,10 + bitmapData.Width + 2, 10);
+
+	delete []zft;
 }
 
 void OnCommand(WORD notifyCode, WORD itemID, HWND ctlHandle)
 {
-    switch (notifyCode)
-    {
-    case WM_LBUTTONDOWN:
-        MessageBox(ctlHandle, "ok", "ok", MB_OK);
-        break;
-    default:
-        break;
-    }
+	switch (notifyCode)
+	{
+	case WM_LBUTTONDOWN:
+		MessageBox(ctlHandle, "ok", "ok", MB_OK);
+		break;
+	default:
+		break;
+	}
 }
+
+CWinApplication *g_pWinApp;
 
 void OnLButtonDown()
 {
-
+	string strUrl = "https://dynamic.12306.cn/otsweb/passCodeAction.do?rand=sjrand";
+	time_t now = time(0);
+	ostringstream os;
+	os << strUrl << "&" << now;
+	strUrl = os.str();
+	os.str("");
+	os << "code" << now << ".jpg";
+	LRESULT hr = URLDownloadToFile(NULL, strUrl.c_str(), os.str().c_str(), 0, NULL);
+	Gdiplus::Rect r(0, 0, 400, 300);
+	if (hr == S_OK)
+		InvalidateRect(g_pWinApp->GetHwnd(), (LPRECT)&r, true);
 }
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, INT iCmdShow)
 {
-    CWinApplication WinApp(hInstance, iCmdShow);
-    PaintProc       = OnPaint;
-    CommandProc     = OnCommand;
-    LButtonDownProc = OnLButtonDown;
-    WinApp.Run();
-    return 0;
+	CWinApplication WinApp(hInstance, iCmdShow);
+	g_pWinApp = &WinApp;
+	PaintProc       = OnPaint;
+	CommandProc     = OnCommand;
+	LButtonDownProc = OnLButtonDown;
+	WinApp.Run();
+	return 0;
 } // WinMain
