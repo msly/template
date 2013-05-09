@@ -10,22 +10,23 @@ class CWinApplication
 {
 public:
     CWinApplication(HINSTANCE hInstance, INT iCmdShow);
-    virtual ~CWinApplication(void);
+	virtual ~CWinApplication(void);
 
 public:
-    static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-    static void WndPaint(HDC hdc);
-    void Run();
+	static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+	static void WndPaint(HDC hdc);
+	void Run();
+	HWND GetHwnd() const { return m_hWnd;};
 
 private:
-    void RegisterDefaultClass();
-    void CreateMainWindow();
+	void RegisterDefaultClass();
+	void CreateMainWindow();
 
 
-    HINSTANCE   m_hInstance;
-    INT         m_iCmdShow;
-    HWND        m_hWnd;
-    ULONG_PTR   m_ulGdiplustoken;
+	HINSTANCE   m_hInstance;
+	INT         m_iCmdShow;
+	HWND        m_hWnd;
+	ULONG_PTR   m_ulGdiplustoken;
 
 };
 
