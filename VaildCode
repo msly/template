@@ -1,8 +1,9 @@
 #include <windows.h>
 #include "WinApplication.h"
 #include <cassert>
+#include <vector>
 
-
+using namespace std;
 
 typedef union
 {
@@ -59,7 +60,9 @@ void ShowImage(HDC hdc)
 void OnPaint(HDC hdc)
 {
     Graphics graphics(hdc);
-    Gdiplus::Bitmap bitmap(L".\\passCodeAction1.jpg");
+    //Gdiplus::Bitmap bitmap(L"C:\\code.jpg");
+    Gdiplus::Bitmap bitmap(L"C:\\validCode.jpg");
+    //Gdiplus::Bitmap bitmap(L".\\passCodeAction.jpg");
     graphics.DrawImage(&bitmap, 10, 10);
 
     // 灰度化 二值化
@@ -87,19 +90,82 @@ void OnPaint(HDC hdc)
     }
     bitmap.UnlockBits(&bitmapData);
 
+    // 输出直方图
     Pen pen(Color(255, 0, 0, 255));
     for (int i=0; i<bitmap.GetWidth(); ++i)
     {
         graphics.DrawLine(&pen, 10+i, 10 + 2*bitmap.GetHeight(), 10+i, 10 + 2*bitmap.GetHeight() - zft[i]);
     }
+    
 
+    // 分割字符   
+    bool bPair = false;
+    vector<int> vecSpilt;
+    for (int y=0; y<bitmap.GetHeight(); ++y)
+    {
+        vecSpilt.clear();
+        bPair = false;
+        for (int x=0; x<bitmap.GetWidth(); ++x)
+        {
+            if (!bPair && zft[x] > y)
+            {
+                vecSpilt.push_back(x);
+                bPair = true;
+            }
+            else if (bPair && zft[x] <= y)
+            {
+                if (x - vecSpilt.back() < 3)
+                    break;
+                vecSpilt.push_back(x);
+                bPair = false;
+            }
+            else if (bPair && x==bitmap.GetWidth()-1 && zft[x] > y)
+            {
+                vecSpilt.push_back(x);
+            }
+        }
+        if (vecSpilt.size() == 8)
+        {
+            for (int i=0; i<vecSpilt.size(); i+=2)
+            {
+                graphics.DrawImage(&bitmap, GpRect(10 + vecSpilt[i], 10 + 2 * bitmap.GetHeight() + 4,  vecSpilt[i+1] - vecSpilt[i], bitmap.GetHeight()),
+                                            vecSpilt[i], 0, vecSpilt[i+1] - vecSpilt[i], bitmap.GetHeight(), UnitPixel);
+                graphics.DrawLine(&pen, 10 + vecSpilt[i], 10 + 2 * bitmap.GetHeight() + 4,  10 + vecSpilt[i], 10 + 3 * bitmap.GetHeight() + 4);
+                graphics.DrawLine(&pen, 10 + vecSpilt[i+1], 10 + 2 * bitmap.GetHeight() + 4,  10 + vecSpilt[i+1], 10 + 3 * bitmap.GetHeight() + 4);
+            }
+            
+            break;
+        }
+    }
+    
     graphics.DrawImage(&bitmap,10 + bitmapData.Width + 2, 10);
+
+    delete []zft;
+}
+
+void OnCommand(WORD notifyCode, WORD itemID, HWND ctlHandle)
+{
+    switch (notifyCode)
+    {
+    case WM_LBUTTONDOWN:
+        MessageBox(ctlHandle, "ok", "ok", MB_OK);
+        break;
+    default:
+        break;
+    }
+}
+
+void OnLButtonDown()
+{
+
 }
 
 INT WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, INT iCmdShow)
 {
     CWinApplication WinApp(hInstance, iCmdShow);
-    PaintProc = OnPaint;
+    PaintProc       = OnPaint;
+    CommandProc     = OnCommand;
+    LButtonDownProc = OnLButtonDown;
     WinApp.Run();
     return 0;
 } // WinMain
