@@ -30,7 +30,9 @@ private:
 };
 
 typedef void (*PaintEvent)(HDC hdc);
-typedef void (*CommandEvent)(WORD NotifyCode, WORD itemID, HWND ctlHandle);
+typedef void (*CommandEvent)(WORD notifyCode, WORD itemID, HWND ctlHandle);
+typedef void (*LButtonDownEvent)();
 
-extern PaintEvent   PaintProc;
-extern CommandEvent CommandProc;
+extern PaintEvent       PaintProc;
+extern CommandEvent     CommandProc;
+extern LButtonDownEvent LButtonDownProc;
