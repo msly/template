@@ -1,7 +1,8 @@
 #include "WinApplication.h"
 
-PaintEvent      PaintProc   = NULL;
-CommandEvent    CommandProc = NULL;
+PaintEvent          PaintProc   = NULL;
+CommandEvent        CommandProc = NULL;
+LButtonDownEvent    LButtonDownProc = NULL;
 
 CWinApplication::CWinApplication(HINSTANCE hInstance, INT iCmdShow)
     : m_hInstance(hInstance)
@@ -69,6 +70,20 @@ LRESULT CALLBACK CWinApplication::WndProc( HWND hWnd, UINT message, WPARAM wPara
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+        break;
+    case WM_COMMAND:
+        if (CommandProc)
+        {
+            CommandProc(HIWORD(wParam), LOWORD(wParam), (HWND)lParam);
+            return 0;
+        }
+        break;
+    case WM_LBUTTONDOWN:
+        if (LButtonDownProc)
+        {
+            LButtonDownProc();
+            return 0;
+        }
         break;
     default:
         break;
